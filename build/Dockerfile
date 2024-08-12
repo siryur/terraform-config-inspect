@@ -5,11 +5,6 @@ ARG LIVE_GO_IMAGE=scratch
 ### Setup
 ###
 
-### Setup Live Image
-FROM ${LIVE_GO_IMAGE} AS setup
-
-COPY --from=setup-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
 ### Setup Build
 FROM ${BUILD_GO_IMAGE} AS setup-build
 
@@ -33,6 +28,11 @@ COPY go.* ./
 RUN go mod download
 
 COPY . .
+
+### Setup Live Image
+FROM ${LIVE_GO_IMAGE} AS setup-live
+
+COPY --from=setup-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ###
 ### Build
@@ -58,7 +58,7 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 # ENTRYPOINT [ "" ]
 
 ### Live
-FROM setup AS live
+FROM setup-live AS live
 
 COPY --from=build /go/bin/terraform-config-inspect /
 
